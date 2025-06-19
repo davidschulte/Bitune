@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" PyTorch Gemma model."""
+"""PyTorch Gemma model."""
 import os
 import math
 import warnings
@@ -423,6 +423,7 @@ class GemmaDecoderLayer(nn.Module):
         self.hidden_size = config.hidden_size
         self.config = config
 
+        config._attn_implementation = "eager"
         self.self_attn = GEMMA_ATTENTION_CLASSES[config._attn_implementation](
             config=config, layer_idx=layer_idx
         )
@@ -1008,7 +1009,11 @@ class GemmaModel(GemmaPreTrainedModel):
                     hidden_states,
                     prompt_lengths,
                     (
-                        (causal_mask.transpose(-1, -2) if self.config.ablation == 420 else torch.zeros_like(causal_mask))
+                        (
+                            causal_mask.transpose(-1, -2)
+                            if self.config.ablation == 420
+                            else torch.zeros_like(causal_mask)
+                        )
                         if enforce_bidir
                         and (
                             self.config.skip_bidir >= 0
@@ -1029,7 +1034,11 @@ class GemmaModel(GemmaPreTrainedModel):
                     hidden_states,
                     prompt_lengths,
                     attention_mask=(
-                        (causal_mask.transpose(-1, -2) if self.config.ablation == 420 else torch.zeros_like(causal_mask))
+                        (
+                            causal_mask.transpose(-1, -2)
+                            if self.config.ablation == 420
+                            else torch.zeros_like(causal_mask)
+                        )
                         if enforce_bidir
                         and (
                             self.config.skip_bidir >= 0
@@ -1182,7 +1191,9 @@ class PassScale(nn.Module):
         self._denominator = nn.Parameter(torch.zeros(config.num_hidden_layers))
 
         # it's such a mess
-        is_newlinear = (config.pass_type >= 600 and config.pass_type < 700) or (config.pass_type >= 800 and config.pass_type < 900)
+        is_newlinear = (config.pass_type >= 600 and config.pass_type < 700) or (
+            config.pass_type >= 800 and config.pass_type < 900
+        )
 
         if config.pass_type == 300:
             self.threshold = torch.finfo(torch.bfloat16).eps
@@ -1190,15 +1201,13 @@ class PassScale(nn.Module):
             self.weight_og = nn.Parameter(torch.zeros(config.num_hidden_layers))
             self.weight.data.fill_(self.threshold)
             self.weight_og.data.fill_(self.threshold)
-        elif (
-            config.pass_type in [5, 9, 10]
-            or is_newlinear
-        ):
+        elif config.pass_type in [5, 9, 10] or is_newlinear:
             if (
                 is_newlinear
-                and (self.config.pass_type % 10) % 4 >= 2 or (config.pass_type >= 800 and config.pass_type < 900)
+                and (self.config.pass_type % 10) % 4 >= 2
+                or (config.pass_type >= 800 and config.pass_type < 900)
             ):
-                if not hasattr(config, 's_init'):
+                if not hasattr(config, "s_init"):
                     config.s_init = 0.01
                 self.threshold = config.s_init
             self.weight = nn.Parameter(torch.zeros(config.num_hidden_layers))
@@ -1391,9 +1400,9 @@ class PassScale(nn.Module):
             self._ratio.requires_grad = False
             self._ratio.data = self._ratio.data.detach()
             self._ratio.data[idx] = ratio.detach()
-            
+
             result = og_hidden_states * (1.0 - ratio) + hidden_states * ratio
-                
+
             self._denominator.requires_grad = False
             self._denominator.data = self._denominator.data.detach()
             self._denominator.data[idx].fill_(1.0)

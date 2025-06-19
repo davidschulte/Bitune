@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" PyTorch Phi model."""
+"""PyTorch Phi model."""
 
 
 import math
@@ -739,6 +739,7 @@ PHI_ATTENTION_CLASSES = {
 class PhiDecoderLayer(nn.Module):
     def __init__(self, config: PhiConfig, layer_idx: int):
         super().__init__()
+        config._attn_implementation = "eager"
         self.self_attn = PHI_ATTENTION_CLASSES[config._attn_implementation](
             config, layer_idx=layer_idx
         )
@@ -1065,7 +1066,11 @@ class PhiModel(PhiPreTrainedModel):
                     decoder_layer.__call__,
                     hidden_states,
                     (
-                        (attention_mask.transpose(-1, -2) if self.config.ablation == 420 else torch.zeros_like(attention_mask))
+                        (
+                            attention_mask.transpose(-1, -2)
+                            if self.config.ablation == 420
+                            else torch.zeros_like(attention_mask)
+                        )
                         if enforce_bidir
                         and (
                             self.config.skip_bidir >= 0
@@ -1083,7 +1088,11 @@ class PhiModel(PhiPreTrainedModel):
                 layer_outputs = decoder_layer(
                     hidden_states,
                     attention_mask=(
-                        (attention_mask.transpose(-1, -2) if self.config.ablation == 420 else torch.zeros_like(attention_mask))
+                        (
+                            attention_mask.transpose(-1, -2)
+                            if self.config.ablation == 420
+                            else torch.zeros_like(attention_mask)
+                        )
                         if enforce_bidir
                         and (
                             self.config.skip_bidir >= 0

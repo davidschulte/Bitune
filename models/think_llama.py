@@ -17,7 +17,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" PyTorch LLaMA model."""
+"""PyTorch LLaMA model."""
 import math
 import warnings
 from typing import List, Optional, Tuple, Union
@@ -841,8 +841,6 @@ class LlamaSdpaAttention(LlamaAttention):
 
 LLAMA_ATTENTION_CLASSES = {
     "eager": LlamaAttention,
-    "flash_attention_2": LlamaFlashAttention2,
-    "sdpa": LlamaSdpaAttention,
 }
 
 
@@ -851,6 +849,7 @@ class LlamaDecoderLayer(nn.Module):
         super().__init__()
         self.hidden_size = config.hidden_size
 
+        config._attn_implementation = "eager"
         self.self_attn = LLAMA_ATTENTION_CLASSES[config._attn_implementation](
             config=config, layer_idx=layer_idx
         )
@@ -1213,7 +1212,11 @@ class LlamaModel(LlamaPreTrainedModel):
                     decoder_layer.__call__,
                     hidden_states,
                     (
-                        (causal_mask.transpose(-1, -2) if self.config.ablation == 420 else torch.zeros_like(causal_mask))
+                        (
+                            causal_mask.transpose(-1, -2)
+                            if self.config.ablation == 420
+                            else torch.zeros_like(causal_mask)
+                        )
                         if enforce_bidir
                         and (
                             self.config.skip_bidir >= 0
@@ -1233,7 +1236,11 @@ class LlamaModel(LlamaPreTrainedModel):
                 layer_outputs = decoder_layer(
                     hidden_states,
                     attention_mask=(
-                        (causal_mask.transpose(-1, -2) if self.config.ablation == 420 else torch.zeros_like(causal_mask))
+                        (
+                            causal_mask.transpose(-1, -2)
+                            if self.config.ablation == 420
+                            else torch.zeros_like(causal_mask)
+                        )
                         if enforce_bidir
                         and (
                             self.config.skip_bidir >= 0
