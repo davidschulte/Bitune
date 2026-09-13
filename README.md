@@ -21,8 +21,14 @@ pip install -e lm-evaluation-harness
 
 ## Configuration
 
-- Set the proper absolute path to this directory in the `common_0.sh` file.
-- The evaluation script requires `wandb` for logging. Update line 57 of `eval.py` with your `wandb` username.
+Set these environmental variables in you .env file
+```bash
+export WANDB_USERNAME=[your wandb username]
+export WANDB_PROJECTNAME=[the wandb project name]
+
+export HOME_DIR='/path/to/bitune'
+```
+
 
 ## Scripts
 
@@ -45,15 +51,6 @@ pip install -e lm-evaluation-harness
 - The mixing module (class `PassScale` defined in `models/think_gemma.py`):
   - Contains trainable coefficients for mixing two sets of features, separate for keys & values, so two coefficients per attention block of the model.
   - Defines `forward()` function that applies the mixing operation based on the variant specified in the config (`config.pass_type`). Our final method is defined by the variant `607` (the one used for experiments), and its simplified version `801`.
-
-## Library Versions
-
-The following versions of the libraries have been used:
-
-- `transformers==4.38.2`
-- `peft==0.11.1`
-- `datasets==2.18.0`
-- `evaluate==0.4.0`
 
 ## Bibtex
 

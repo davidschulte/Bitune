@@ -1,4 +1,4 @@
-HOME_DIR="/path/to/this/dir"
+source .env
 
 
 run_id=420 # any value here

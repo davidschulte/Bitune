@@ -30,7 +30,7 @@ def eval(model, tasks, bs=64, limit=None, num_fewshot=0):
             if len(_split) == 1:
                 metric = metric_raw
             else:
-                metric = f'{metric_raw.split(",")[1]}/{metric_raw.split(",")[0]}'
+                metric = f"{metric_raw.split(',')[1]}/{metric_raw.split(',')[0]}"
             if metric == "alias":
                 continue
             value = results[task][metric_raw]
@@ -54,7 +54,13 @@ if __name__ == "__main__":
     if args.update == 1:
         time.sleep(10)
         api = wandb.Api()
-        runs = api.runs("username/bitune", {"group": args.group}, per_page=10000)
+        wandb_username = os.environ["WANDB_USERNAME"]
+        wandb_projectname = os.environ["WANDB_PROJECTNAME"]
+        runs = api.runs(
+            f"{wandb_username}/{wandb_projectname}",
+            {"group": args.group},
+            per_page=10000,
+        )
 
         run = None
         for r in runs:
