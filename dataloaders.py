@@ -14,9 +14,13 @@ def prepare_datasets(
     val_subset=None,
     subset=None,
     custom_filter=None,
+    load_from_disk=False,
 ):
     datasets.disable_caching()
-    ds = datasets.load_dataset(dataset_name, subset)
+    if load_from_disk:
+        ds = datasets.load_from_disk(dataset_path=dataset_name)
+    else:
+        ds = datasets.load_dataset(dataset_name, subset)
 
     def tokenize(samples, args):
         samples = [dict(zip(samples, i)) for i in zip(*samples.values())]
@@ -234,6 +238,18 @@ def create_dataloaders(tokenizer, args):
             subset="main",
             train_field="train",
             val_field="test",
+        )
+    elif args.dataset == "smoltalk2_sft_german":
+        train_dataset, valid_dataset = prepare_datasets(
+            args,
+            "data/smoltalk_sft_german",
+            tokenizer,
+            lambda x: f"Frage: {x['messages'][0]['content']}\n\nAntwort:",
+            lambda x: " " + x["messages"][1]["content"] + tokenizer.eos_token,
+            subset=None,
+            train_field="train",
+            val_subset=1000,
+            load_from_disk=True,
         )
     else:
         raise ValueError(f"Unknown dataset: {args.dataset}")
